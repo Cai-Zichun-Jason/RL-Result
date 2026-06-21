@@ -1,0 +1,4 @@
+step,val_success,val_pass@1,val_reward_mean,train_success,train_pass@16,MI_traj,Hcond_traj,MI_firstturn,valid_think_rate,actor_entropy,pg_loss,actor_grad_norm,critic_vf_loss,reward_mean,early_stop_collapse,step_time_s
+0,0.1,,0.5,,,,,,,,,,,,,
+10,0.15,,,,,0.9,,,1.0,0.4,,,,,,80.0
+20,0.2,,,,,1.5,,,0.95,0.2,,,,,,82.0
