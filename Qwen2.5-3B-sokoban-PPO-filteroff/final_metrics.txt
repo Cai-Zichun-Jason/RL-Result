@@ -1,0 +1,12 @@
+# 3B sokoban PPO nofilter — 关键指标摘要 (人为从 train.log 提取)
+
+## val 平均奖励轨迹 (val-core reward mean@512), 按验证次序
+# 注: reward 数值的先后顺序可靠, 清晰呈现 上升→见顶→坍缩。
+基线(训练前) : 0.466
+上升期       : 0.77 -> 0.98 -> 1.28 -> 1.01 -> 1.11 -> 1.41 -> 1.20
+见顶         : 1.50 -> 1.67  (约 step 90-100)
+坍缩下行     : 1.48 -> 1.54 -> 1.21 -> 0.84 -> 1.07 -> 0.94 -> 0.57 -> 0.36
+提前停止     : early_stopped/reward_variance_collapse:1.0 @ step 175
+最后进度     : 174/200 [4:08:22]
+
+## 完整逐步指标见 train.log (含 collapse/mi_estimate, conditional_entropy_est 等 MI 坍缩诊断)
