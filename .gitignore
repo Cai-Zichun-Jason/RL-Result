@@ -1,0 +1,5 @@
+# 只追踪轻量文本结果, 不传 checkpoint 权重
+checkpoint
+*.pt
+*.bin
+*.safetensors
