@@ -1,7 +1,8 @@
 # RL-Result
 
 RAGEN (StarPO) 实验结果归档仓。每个实验一个目录, 命名
-`<模型名>-<任务>-<优化器>-filter{on,off}`, 内含 `train.log` / `metadata.txt` /
+`<家族>-<尺寸>-<任务>-<优化器>-filter{on,off}` (如 `Qwen2.5-3B-sokoban-PPO-filteroff`,
+重名追加 `-2`/`-3`), 内含 `train.log` / `metadata.txt` /
 `final_metrics.txt` (不含 checkpoint 权重, 权重留在训练机本地)。
 
 实验怎么跑、脚本怎么用, 见主仓 `experiment_scripts/Guide.md` 与 `experiment.md`。
