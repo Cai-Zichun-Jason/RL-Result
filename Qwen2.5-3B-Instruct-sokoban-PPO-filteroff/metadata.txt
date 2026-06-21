@@ -1,0 +1,17 @@
+experiment_name : Qwen2.5-3B-Instruct-sokoban-PPO-filteroff
+family          : Qwen2.5
+size            : 3B
+model_name      : Qwen2.5-3B-Instruct
+model_path      : /data/share/Qwen2.5-3B-Instruct
+task            : sokoban (_2_sokoban)
+optimizer       : PPO
+filter          : off (filteroff)
+steps           : 200 (planned) — 实际跑到 step 175 触发提前停止
+gpus            : 0,1,2,3 (4)
+gpu_mem_util    : 0.4
+started_at      : 2026-06-21 18:34:32
+ended_at        : 2026-06-21 22:47:07
+exit_code       : 0 (early_stopped/reward_variance_collapse)
+checkpoint_dir  : checkpoints/ragen/sokoban-PPO-0_1_2_3gpu-nofilter/global_step_100
+note            : 本目录是用旧脚本 run_serial.sh 跑的真实数据, 人为对齐成新归档格式。
+                  提前停止原因: reward variance collapse (step 175), 是论文 V2 研究的坍缩现象。
