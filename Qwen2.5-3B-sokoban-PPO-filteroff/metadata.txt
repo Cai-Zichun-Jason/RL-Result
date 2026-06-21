@@ -1,4 +1,4 @@
-experiment_name : Qwen2.5-3B-Instruct-sokoban-PPO-filteroff
+experiment_name : Qwen2.5-3B-sokoban-PPO-filteroff
 family          : Qwen2.5
 size            : 3B
 model_name      : Qwen2.5-3B-Instruct

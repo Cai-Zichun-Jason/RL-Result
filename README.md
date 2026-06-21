@@ -11,7 +11,7 @@ RAGEN (StarPO) 实验结果归档仓。每个实验一个目录, 命名
 
 ## 当前进度 (2026-06-21)
 
-### ✅ Qwen2.5-3B-Instruct-sokoban-PPO-filteroff — 有效真实数据
+### ✅ Qwen2.5-3B-sokoban-PPO-filteroff — 有效真实数据
 第一个跑通的实验 (旧脚本 run_serial.sh, 已人为对齐成新归档格式)。
 
 - 训练 4 小时, 跑到 **step 175 / 200** 后触发**提前停止** `reward_variance_collapse`。
