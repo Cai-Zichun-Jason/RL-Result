@@ -15,6 +15,18 @@ RAGEN (StarPO) 实验结果归档仓。每个实验一个目录, 命名
 任务 = CoordSokoban (坐标版推箱子), 多轮 agent RL, 4×H100, 200 步, 验证 512 episode。
 所有指标口径与论文 RAGEN-2 (arXiv:2604.06268) Table 4 对齐 (success rate)。
 
+## 0. 执行摘要 (TL;DR)
+
+**已完成 6 个 run, 复现结论: 与论文 Table 4 定性完全一致, RAGEN-2 的三大主张全部成立。**
+
+- ✅ **filter 防坍缩 (V2 核心)**: 3B PPO 开 filter, success 21.5%→**37.1%** (+15.6%, 论文 +16.0%), 且从 step175 坍缩变为**跑满 200 步不坍缩**。
+- ✅ **PPO 比 GRPO/DrGRPO 稳**: 坍缩步数 PPO(175) > GRPO(155) > DrGRPO(93)。
+- ✅ **模型大小非单调**: 1.5B(23.8%) > 3B(21.5%), 与论文 1.5B>3B 反常现象一致; 越小越早坍缩 (0.5B step71)。
+- 📊 **额外贡献**: 给出论文没有的**坍缩步数**与 **"MI 先虚高再崩盘" 前兆信号**。
+
+> 绝对值普遍略高于论文 (步数/验证规模/seed 配置差异), 但**所有趋势方向一致**。
+> 仍需补的实验见文末 [§5 待跑清单](#5-待跑清单)。
+
 ## 1. 总览表 (本仓真实结果)
 
 | 实验 | 峰值 val success | 末值 success | 是否跑满200步 | 坍缩(early-stop) | MI I(X;Z) 走势 | valid思考率末值 |
@@ -118,3 +130,43 @@ DrGRPO (不除 std) 坍缩最快。与论文/README "PPO 比 GRPO 更稳定" 一
 
 > 备注: 早期有一次 0.5B 失败 (旧脚本 run_serial.sh 复用了 3B 同名 checkpoint 目录,
 > size mismatch 崩溃), 已用新脚本 (按模型命名目录) 重跑, 该 bug 不再出现。
+
+---
+
+## 5. 待跑清单
+
+### 优先级 1: 补 filter=on, 填满对照表 C (核心)
+目前 filter=on **只测了 3B PPO 一个**, 其余 4 格空缺。补齐后才能完整对照论文的 filter 增益列。
+论文增益预期: 0.5B **+22.9%** (最大), 1.5B +6.2%, 3B GRPO +9.0%, 3B DrGRPO −0.4% (唯一负值)。
+
+| 待跑 | 论文预期增益 | 价值 |
+|------|------|------|
+| **0.5B PPO on** | +22.9% | ⭐ 最高 — 验证"filter 救小模型" |
+| **1.5B PPO on** | +6.2% | 凑齐模型大小线的 on |
+| 3B GRPO on | +9.0% | 算法线 on |
+| 3B DrGRPO on | −0.4% | 算法线 on (验证负增益) |
+
+一键命令 (后台串行, 自动归档推 CJJ; GPU 当前空闲, 可直接跑):
+```bash
+cd /root/RAGEN && GIT_PUSH=on nohup bash experiment_scripts/run_multiple_experiments.sh \
+  "Qwen2.5,0.5B,PPO,on" "Qwen2.5,1.5B,PPO,on" \
+  "Qwen2.5,3B,GRPO,on" "Qwen2.5,3B,DrGRPO,on" \
+  > logs/queue_filteron.log 2>&1 &
+```
+> 时间: filter=on 通常跑满 200 步, 每个约 3-4.5h, 4 个约 14-18h。时间紧可只跑前两个 (0.5B/1.5B on, ~7-9h)。
+
+### 优先级 2: 补 7B (扩展模型大小线上界)
+论文 7B=42.4% (最强档)。本机有 `/data/share/Qwen2.5-7B-Instruct`。建议 `GPU_MEM_UTIL=0.3`。
+```bash
+cd /root/RAGEN && GIT_PUSH=on GPU_MEM_UTIL=0.3 nohup bash experiment_scripts/run_single_experiment.sh \
+  Qwen2.5 7B PPO off > logs/7b.log 2>&1 &
+```
+
+### 优先级 3 (可选): 跨家族 / 跨任务
+- **Qwen3 / Qwen3.5 同尺寸对比** (需先 `STEPS=5` 冒烟验证兼容性; 注意 Qwen3 思考链长, 要调大
+  `response_length=1024 max_model_len=8192`, 否则 think 不闭合→全程 invalid)。
+- **换任务** (frozenlake / countdown / sudoku) 验证结论是否跨任务成立。
+
+### 已知不做
+- 论文主表的 DAPO 列: 脚本已支持 (`run_single_experiment.sh ... DAPO ...`), 按需补。
+- checkpoint 权重未保留 (训练机本地空间考虑), 如需做推理评估需重训。
