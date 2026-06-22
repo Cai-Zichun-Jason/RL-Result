@@ -118,6 +118,23 @@ DrGRPO (不除 std) 坍缩最快。与论文/README "PPO 比 GRPO 更稳定" 一
 关键观察: **坍缩前 MI 常先虚高再崩盘** (off 系列 MI 峰值 2.0-2.35 后骤降), 说明
 "MI 短暂上冲" 可能是坍缩的前兆信号。
 
+### val success 归零的因果链 (机制解读)
+为何 off 实验 success 先升后崩到 **0%** (非单纯"变差")? 以 GRPO 崩盘点 step130→155 为例:
+
+| step | success | 响应长度 | invalid_action | valid思考率 | actor熵 |
+|------|------|------|------|------|------|
+| 130 | ~12% | 947 | 79% | 20% | 0.62 |
+| 140 | 下滑 | 1115 | 99% | 15% | 1.44 |
+| 150 | ~4% | 1234 | 99.8% | 6% | **4.57** |
+| 155 | **0%** | — | **100%** | 1.4% | 爆炸 |
+
+因果链: 学会任务 → 为多拿奖励输出越来越长、`<think>` 不闭合 → valid思考率从20%崩到1.4%
+→ 环境解析不出合法动作 (`manager_invalid_action` 99%→**100%**) → 动作全非法、推不动箱子
+→ **success 必然=0**。同时 actor熵爆炸 (0.62→4.57, 输出退化成高熵乱码)。
+
+→ **0% 不是"模型变笨", 是"输出格式彻底坍缩、产生不了合法动作"**。这正是 reasoning collapse,
+而 filter=on (3B PPO) 全程 success 稳在 37%、思考率100%, 证明 filter 阻止了这条因果链。
+
 ---
 
 ## 实验清单
@@ -170,3 +187,49 @@ cd /root/RAGEN && GIT_PUSH=on GPU_MEM_UTIL=0.3 nohup bash experiment_scripts/run
 ### 已知不做
 - 论文主表的 DAPO 列: 脚本已支持 (`run_single_experiment.sh ... DAPO ...`), 按需补。
 - checkpoint 权重未保留 (训练机本地空间考虑), 如需做推理评估需重训。
+
+---
+
+## 6. Presentation 建议 (展示什么 + 分析什么)
+
+### 6.1 核心叙事 (一句话)
+"我们复现了 RAGEN-2 的核心现象 **reasoning collapse**, 并验证了 SNR filter 能阻止它" ——
+所有结论都有本仓真实数据 + 论文 Table 4 双重支撑。
+
+### 6.2 建议展示的图 (数据都在各 metrics.csv, 可直接画)
+
+1. **坍缩曲线 (主图)**: 同一张图画 4 条 off 实验的 val success vs step ——
+   清晰呈现"先升 → 见顶 → 崩到 0%"。配 `valid_thinking_rate` 和 `manager_invalid_action`
+   叠加, 说明崩盘 = 输出格式坏掉 → 动作全非法。
+   - 实测崩盘点: GRPO step155, DrGRPO step93, 0.5B step71, 3B-PPO step175。
+
+2. **filter on vs off 对照 (最有说服力)**: 3B PPO 两条 success 曲线叠放 ——
+   off 在 step175 崩到 8.4%, on 全程稳在 37% 不崩。一图证明 filter 的作用。
+
+3. **MI 前兆信号 (亮点, 论文没强调)**: 画 off 实验的 `MI I(X;Z)` vs step ——
+   崩盘前 MI 先冲高 (2.0-2.35) 再骤降。可作为"坍缩早期预警"的发现。
+
+4. **三条对照线柱状图**: 优化器线 (PPO/GRPO/DrGRPO) / 模型大小线 (0.5/1.5/3B) /
+   filter 增益, 每条配论文 Table 4 数字并列, 直接展示"复现一致"。
+
+### 6.3 建议讲的分析点 (机制, 不只数字)
+- **success 归零的因果链** (展示时最能体现理解): 学会任务 → 输出越来越长、`<think>` 不闭合 →
+  valid思考率从 20% 崩到 1.4% → `manager_invalid_action` 99%→100% → 动作全非法 → success=0。
+  即 "0% 不是模型变笨, 是输出彻底跑偏、产生不了合法动作"。
+  (证据: GRPO step130→155, 响应长度 947→1234, actor熵 0.62→4.57 爆炸)
+- **为何 PPO 比 GRPO 稳**: PPO 有 critic 提供 token 级 baseline, 梯度噪声小, 最晚坍缩。
+- **为何 1.5B > 3B**: 非单调, 呼应论文; 大模型不一定更稳。
+- **filter 的本质**: 丢掉 reward variance 低的无信号 rollout, 减少梯度噪声 → 从根因上防坍缩。
+
+### 6.4 为支撑 Presentation, 建议补跑的程序 (按优先级)
+完整命令见 [§5 待跑清单](#5-待跑清单)。Presentation 角度的优先级:
+
+| 优先级 | 补跑 | 为 Presentation 提供什么 |
+|------|------|------|
+| ⭐ P1 | **0.5B PPO on + 1.5B PPO on** | 让"filter 增益"柱状图在小模型档完整 (论文 0.5B +22.9% 最戏剧) |
+| P1 | 3B GRPO on + DrGRPO on | 填满 filter 对照表 C 全部 4 格 |
+| P2 | 7B PPO off | 模型大小线延伸到 42.4%, 柱状图更完整 |
+| P3 | Qwen3/3.5 同尺寸 | 跨家族对比 (注意调大 response_length, 见 §5) |
+
+> 最小可展示集: 当前 6 个 run 已足够讲完整故事 (坍缩 + filter 防坍缩 + 三条对照线)。
+> 补 P1 的 4 个 filter=on 后, "filter 增益"那张图才完整, 是性价比最高的补充。
