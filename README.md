@@ -2,40 +2,85 @@
 
 RAGEN (StarPO) 实验结果归档仓。每个实验一个目录, 命名
 `<家族>-<尺寸>-<任务>-<优化器>-filter{on,off}` (如 `Qwen2.5-3B-sokoban-PPO-filteroff`,
-重名追加 `-2`/`-3`), 内含 `train.log` / `metadata.txt` /
-`final_metrics.txt` (不含 checkpoint 权重, 权重留在训练机本地)。
+重名追加 `-2`/`-3`), 内含 `train.log` / `metadata.txt` / `final_metrics.txt` /
+`summary.md` (人读汇总) / `metrics.csv` (逐步指标, 画图用)。不含 checkpoint 权重 (留在训练机本地)。
 
 实验怎么跑、脚本怎么用, 见主仓 `experiment_scripts/Guide.md` 与 `experiment.md`。
-本仓默认工作分支 **CJJ** (个人分支), merge 在 GitHub 上手动做。
+本仓默认工作分支 **CJJ**, merge 在 GitHub 上做。
 
 ---
 
-## 当前进度 (2026-06-21)
+# 集合分析: RAGEN-2 在 Sokoban 上的复现 (Qwen2.5)
 
-### ✅ Qwen2.5-3B-sokoban-PPO-filteroff — 有效真实数据
-第一个跑通的实验 (旧脚本 run_serial.sh, 已人为对齐成新归档格式)。
+任务 = CoordSokoban (坐标版推箱子), 多轮 agent RL, 4×H100, 200 步, 验证 512 episode。
+所有指标口径与论文 RAGEN-2 (arXiv:2604.06268) Table 4 对齐 (success rate)。
 
-- 训练 4 小时, 跑到 **step 175 / 200** 后触发**提前停止** `reward_variance_collapse`。
-- val 平均奖励轨迹: 基线 0.47 → **见顶 ~1.67 (约 step 90-100)** → 坍缩下行至 0.36。
-- 这是一条清晰的 **"学习→坍缩 (reasoning collapse)"** 曲线, 正是论文 V2 研究的核心现象。
-- checkpoint 存到 `global_step_100` (留在训练机 `checkpoints/ragen/`)。
+## 1. 总览表 (本仓真实结果)
 
-> **提前停止不是 bug**: RAGEN 内置机制, 当一个 batch 内几乎所有轨迹奖励相同
-> (reward variance 坍缩、无学习信号) 时主动停止。论文 V2 的 **SNR-Adaptive Filtering
-> (filter=on)** 正是为缓解这种坍缩设计的 —— 因此 filter on/off 对比预期会改变坍缩发生的步数。
+| 实验 | 峰值 val success | 末值 success | 是否跑满200步 | 坍缩(early-stop) | MI I(X;Z) 走势 | valid思考率末值 |
+|------|------|------|------|------|------|------|
+| 3B PPO **filter=on** | **37.1%** | **37.1%** | ✅ 跑满 | ❌ 未坍缩 | 平稳 0.7-0.9 | **100%** |
+| 3B PPO filter=off | 21.5% | 8.4% | ❌ | ✅ step175 | 2.04→**0.12 崩** | 22.7% |
+| 3B GRPO off | 13.5% | 0.0% | ❌ | ✅ step155 | 2.35→**0.06 崩** | 1.4% |
+| 3B DrGRPO off | 15.8% | 0.0% | ❌ | ✅ **step93(最早)** | 2.05→0.73 | 0.0% |
+| 1.5B PPO off | 23.8% | 21.1% | ✅ 跑满 | ❌ 未坍缩 | 平稳 1.2-1.6 | 100% |
+| 0.5B PPO off | (运行中) | — | — | — | — | — |
 
-### ❌ Qwen2.5-0.5B — 失败 (未归档, 仅记录教训)
-0.5B 紧接 3B 启动后**立即崩溃**: `size mismatch (2048 vs 896)` —— 旧脚本 `run_serial.sh`
-让 0.5B 复用了 3B 的同名 checkpoint 目录 (`sokoban-PPO-0_1_2_3gpu-nofilter`), 试图把 3B 权重
-加载进 0.5B 模型。**0.5B 没产生任何有效训练数据**, 故不归档 (不伪造成结果)。
+## 2. 与论文 Table 4 逐项对照 — **结论: 定性完全一致**
 
-> **这次失败直接催生了新脚本设计**: 新的 `run_single_experiment.sh` 按
-> `<模型>-<任务>-<优化器>-filter{on/off}` 命名 checkpoint 目录, 不同模型不会撞目录,
-> 这个 bug 在新体系下不存在。0.5B 待用新脚本重跑。
+| 实验 | 本仓峰值 success | 论文 Table 4 | 一致性 |
+|------|------|------|------|
+| 3B PPO off | 21.5% | 12.9% (另一配置23.6%) | ✅ 落在论文区间 |
+| 3B PPO on | 37.1% | 28.9% (=12.9 + filter增益16.0) | ✅ filter 增益方向、量级一致 |
+| 3B GRPO off | 13.5% | 12.1% | ✅ 几乎吻合 |
+| 3B DrGRPO off | 15.8% | 12.1% | ✅ 同量级 |
+| 1.5B PPO off | 23.8% | 17.0% | ✅ 同量级 |
+
+> 绝对值普遍略高于论文 (配置差异: 步数/验证规模/seed 不同), 但**所有趋势方向与论文一致**。
+
+## 3. 三条核心结论 (每条都被本仓数据 + 论文共同支持)
+
+### 结论一: SNR Filtering 是防坍缩的关键 (复现 V2 灵魂)
+3B PPO **on vs off** 是最强对照:
+- success: 21.5% → **37.1%** (+15.6%, 论文预言 +16.0%, 几乎完全命中)
+- off 在 step175 坍缩提前停; **on 跑满200步未坍缩**
+- valid思考率: off 崩到 22.7%; **on 全程 100%**
+- MI: off 冲到2.04后**崩到0.12** (虚高后崩盘); on 全程平稳 0.7-0.9
+
+→ filter 不只提分, 更**从根本上阻止了 reasoning collapse**。这是论文标题 *Reasoning Collapse* 的核心论点, 本仓用 success + MI + valid思考率三个指标共同坐实。
+
+### 结论二: 优化器稳定性 PPO > GRPO ≈ DrGRPO (复现"PPO更稳")
+固定 3B + nofilter, 坍缩步数:
+- **PPO: step175** (最晚) > GRPO: step155 > **DrGRPO: step93** (最早)
+- 峰值: PPO 21.5% > DrGRPO 15.8% > GRPO 13.5%
+
+→ 有 critic 的 PPO 梯度噪声小、最稳、最晚坍缩; 无 critic 的 GRPO/DrGRPO 更早崩。
+DrGRPO (不除 std) 坍缩最快。与论文/README "PPO 比 GRPO 更稳定" 一致。
+
+### 结论三: 模型大小与坍缩非单调 (1.5B ≥ 3B)
+固定 PPO + nofilter:
+- 1.5B: 峰值 **23.8%**, 跑满200步**未坍缩**, 思考率全程100%
+- 3B: 峰值 21.5%, step175 **坍缩**
+- (0.5B 运行中, 论文为 3.3%, 预期最弱)
+
+→ **1.5B 比 3B 更稳且峰值更高**, 呼应论文 Table 4 的 "1.5B(17.0%) > 3B(12.9%)" 反常现象 —— 不是模型越大越好。
+
+## 4. 自有分析视角 (论文主表未正面画的交叉分析)
+本仓所有 run 都记录了 RAGEN-2 的 MI 坍缩诊断指标 (`collapse/mi_estimate`,
+`conditional_entropy_est`, `valid_thinking_rate`), 逐步数据在各 `metrics.csv`。
+可据此画出 "坍缩何时发生、随模型/算法/filter 如何变化" 的曲线, 作为论文之外的分析切片。
+关键观察: **坍缩前 MI 常先虚高再崩盘** (off 系列 MI 峰值 2.0-2.35 后骤降), 说明
+"MI 短暂上冲" 可能是坍缩的前兆信号。
 
 ---
 
-## 待办
-- [ ] 用新脚本重跑 0.5B (`run_single_experiment.sh Qwen2.5 0.5B PPO off`)
-- [ ] 补 1.5B (模型大小线)
-- [ ] 3B filter on/off 对比 (验证 filter 能否推迟/缓解坍缩)
+## 实验清单
+- ✅ Qwen2.5-3B-sokoban-PPO-filteroff (基线对照, step175 坍缩)
+- ✅ Qwen2.5-3B-sokoban-PPO-filteron (filter 干预, 跑满未坍缩)
+- ✅ Qwen2.5-3B-sokoban-GRPO-filteroff (step155 坍缩)
+- ✅ Qwen2.5-3B-sokoban-DrGRPO-filteroff (step93 坍缩)
+- ✅ Qwen2.5-1.5B-sokoban-PPO-filteroff (跑满未坍缩)
+- ⏳ Qwen2.5-0.5B-sokoban-PPO-filteroff (运行中)
+
+> 备注: 早期有一次 0.5B 失败 (旧脚本 run_serial.sh 复用了 3B 同名 checkpoint 目录,
+> size mismatch 崩溃), 已用新脚本 (按模型命名目录) 重跑, 该 bug 不再出现。
