@@ -1,0 +1,17 @@
+experiment_name : Qwen3-4B-sokoban-GRPO-filteroff
+family          : Qwen3
+size            : 4B
+model_name      : Qwen3-4B-Instruct-2507
+model_path      : /data/share/Qwen3-4B-Instruct-2507 (.env key: MODEL_Qwen3_4B)
+task            : sokoban (_2_sokoban)
+optimizer       : GRPO
+filter          : off (filteroff)
+steps           : 200
+gpus            : 0,1,2,3 (4)
+gpu_mem_util    : 0.4
+started_at      : 2026-06-22 21:55:24
+algo_overrides  : algorithm.adv_estimator=grpo algorithm.norm_adv_by_std_in_grpo=True actor_rollout_ref.actor.loss_agg_mode=seq-mean-token-mean
+filter_overrides: actor_rollout_ref.rollout.rollout_filter_value=1.0
+ended_at        : 2026-06-23 01:48:12
+exit_code       : 0
+checkpoint_dir  : /root/RAGEN/checkpoints/ragen/Qwen3-4B-sokoban-GRPO-filteroff
