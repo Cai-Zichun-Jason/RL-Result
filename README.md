@@ -16,6 +16,27 @@ RAGEN (StarPO) 实验结果归档仓。每个实验一个目录, 命名
 所有指标口径与论文 RAGEN-2 (arXiv:2604.06268) Table 4 对齐 (success rate)。
 **当前共 21 个 run** (Qwen2.5-0.5B/1.5B/3B + Qwen3-4B × {PPO,GRPO,DrGRPO} × filter{on,off} 的子集; 含 Jack 分支补的 4 个 1.5B run)。
 
+## 背景: RAGEN V1 / V2 核心做了什么
+
+**RAGEN = 一个用 RL 训练 LLM 做多轮 agent 任务的框架, 核心是 StarPO。**
+
+- **StarPO (框架, 非优化器)**: State-Thinking-Action-Reward Policy Optimization。把"状态→`<think>`思考→`<answer>`动作→环境奖励"的多轮轨迹组织起来做 RL。PPO / GRPO / DrGRPO / DAPO 是它 update 阶段可换的**优化器**(优势估计器), 不与 StarPO 并列。默认 PPO (GAE), 因官方发现 PPO 比 GRPO 更稳。
+
+### RAGEN V1 (2025.4) — "能不能训起来"
+- 提出 StarPO 框架, 证明 LLM 能在 Sokoban / FrozenLake / Bandit 等**多轮 agent 环境**里用 RL 学会任务 (success 显著高于未训练基线)。
+- 演示**泛化**: 在简单 Sokoban (6×6 单箱) 上训练, 能迁移到更大网格、不同符号、FrozenLake。
+- 关键经验: 无 KL + 过滤失败轨迹 → 更稳; 把默认优化器从 GRPO 改成 PPO(GAE)。
+- **为什么不支持 DPO**: StarPO 是在线 RL (需环境奖励 + 在线 rollout); DPO 是离线偏好优化 (需成对偏好数据、无环境)。两者目标函数与数据需求不同, DPO 放不进 StarPO 的循环。
+
+### RAGEN V2 (2026.3, 本仓复现对象) — "为什么会训崩, 怎么救"
+- **核心现象 = Reasoning Collapse (推理坍缩)**: 训练中模型先学会任务 (success 上升), 见顶后输出退化 —— `<think>` 越来越长却不闭合、动作变非法、success 崩到 0。论文系统性研究这一现象。
+- **核心诊断 = 互信息 (MI) 指标**: 光看 entropy 看不出坍缩 (模板坍缩时单输入内仍"多样", 但跨输入趋同)。V2 用两个量刻画:
+  - **MI I(X;Z)** = 推理 Z 对输入 X 的依赖 (跨输入可区分性), 坍缩时下降;
+  - **条件熵 H(Z|X)** = 单输入内的多样性。
+  四种 reasoning regime 由这两轴划分; "模板坍缩"(高熵、低 MI) 是 entropy 指标看不见的盲区。
+- **核心干预 = SNR-Aware Filtering (filter=on)**: 用 reward variance 作信噪比代理, 丢掉低方差(无学习信号)的 rollout 组, 减少梯度噪声 → 缓解坍缩。论文 Table 4 量化其在各算法/尺寸上的增益。
+- **本仓做的事**: 在 Sokoban 上复现 V2 的三大主张 (filter 防坍缩 / PPO 比 GRPO 稳 / 模型大小非单调), 用 success + MI + valid思考率三指标交叉验证, 并给出论文没有的**逐 run 坍缩步数**与**坍缩前兆信号**。逐项对照见 [§2](#2-与论文-table-4-完整逐项对照--结论-定性完全一致)。
+
 ## 0. 执行摘要 (TL;DR)
 
 **21 个 run 后, 论文 RAGEN-2 的定性结论全部复现, 并浮现一个更精细的主张:
