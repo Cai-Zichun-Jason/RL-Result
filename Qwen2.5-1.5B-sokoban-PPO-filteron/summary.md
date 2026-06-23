@@ -1,4 +1,4 @@
-# 实验汇总: Qwen2.5-1.5B-sokoban-PPO-filteron-2
+# 实验汇总: Qwen2.5-1.5B-sokoban-PPO-filteron
 
 - 总步数(有 metrics 的最后一步): **284**
 - 运行状态: `success`
