@@ -1,4 +1,4 @@
-# Qwen2.5-1.5B-sokoban-PPO-filteron-2 — final metrics
+# Qwen2.5-1.5B-sokoban-PPO-filteron — final metrics
 
 ## Run Status
 - max_step_with_metrics: 284

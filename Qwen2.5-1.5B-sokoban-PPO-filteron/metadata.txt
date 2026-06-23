@@ -1,4 +1,4 @@
-experiment_name : Qwen2.5-1.5B-sokoban-PPO-filteron-2
+experiment_name : Qwen2.5-1.5B-sokoban-PPO-filteron
 family          : Qwen2.5
 size            : 1.5B
 model_name      : Qwen2.5-1.5B
