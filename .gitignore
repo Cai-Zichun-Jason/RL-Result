@@ -3,3 +3,9 @@ checkpoint
 *.pt
 *.bin
 *.safetensors
+
+# 演示文稿草稿 / 模板 (不入库)
+slides_ragen_v2.md
+RL Presentation.pptx
+*.pptx
+PRESENTATION.md
