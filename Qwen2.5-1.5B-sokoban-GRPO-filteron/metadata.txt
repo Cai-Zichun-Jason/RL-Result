@@ -1,0 +1,17 @@
+experiment_name : Qwen2.5-1.5B-sokoban-GRPO-filteron
+family          : Qwen2.5
+size            : 1.5B
+model_name      : Qwen2.5-1.5B-Instruct
+model_path      : /data/share/Qwen2.5-1.5B-Instruct (.env key: MODEL_Qwen2_5_1_5B)
+task            : sokoban (_2_sokoban)
+optimizer       : GRPO
+filter          : on (filteron)
+steps           : 200
+gpus            : 0,1,2,3 (4)
+gpu_mem_util    : 0.4
+started_at      : 2026-06-22 19:09:26
+algo_overrides  : algorithm.adv_estimator=grpo algorithm.norm_adv_by_std_in_grpo=True actor_rollout_ref.actor.loss_agg_mode=seq-mean-token-mean
+filter_overrides: actor_rollout_ref.rollout.rollout_filter_strategy=top_p actor_rollout_ref.rollout.rollout_filter_value=0.9 actor_rollout_ref.rollout.rollout_filter_top_p_prob_mode=softmax
+ended_at        : 2026-06-22 21:32:37
+exit_code       : 0
+checkpoint_dir  : /root/RAGEN/checkpoints/ragen/Qwen2.5-1.5B-sokoban-GRPO-filteron
