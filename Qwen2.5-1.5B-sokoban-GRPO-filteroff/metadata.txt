@@ -1,0 +1,20 @@
+experiment_name : Qwen2.5-1.5B-sokoban-GRPO-filteroff
+family          : Qwen2.5
+size            : 1.5B
+model_name      : Qwen2.5-1.5B
+model_path      : /mnt/afs/share/Qwen2.5-1.5B
+task            : sokoban (_2_sokoban)
+optimizer       : GRPO
+filter          : off (filteroff)
+steps           : 400
+gpus            : 3 (1)
+gpu_mem_util    : 0.3
+ray_num_cpus    : 16
+wandb_mode      : offline
+logger          : ['console','wandb']
+algo_overrides  : algorithm.adv_estimator=grpo algorithm.norm_adv_by_std_in_grpo=True actor_rollout_ref.actor.loss_agg_mode=seq-mean-token-mean
+filter_overrides: actor_rollout_ref.rollout.rollout_filter_strategy=top_p actor_rollout_ref.rollout.rollout_filter_value=1.0 actor_rollout_ref.rollout.rollout_filter_top_p_prob_mode=softmax actor_rollout_ref.rollout.rollout_filter_type=largest actor_rollout_ref.rollout.rollout_filter_metric=reward_variance actor_rollout_ref.rollout.rollout_filter_include_zero=True
+wall_time       : 7091s
+exit_status     : success
+early_stop      : reward_variance_collapse
+source_log      : logs/custom_sokoban_Qwen2.5-1.5B/sokoban-GRPO-nofilter-Qwen2.5-1.5B.log

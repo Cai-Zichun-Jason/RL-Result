@@ -1,0 +1,23 @@
+# Qwen2.5-1.5B-sokoban-PPO-filteroff — final metrics
+
+## Run Status
+- max_step_with_metrics: 257
+- wall_time: 49183s
+- early_stop: reward_variance_collapse
+
+## Peak / Baseline / Last
+- val_success: baseline 5.86% @ step 0 | peak 20.31% @ step 120 | last 1.17% @ step 250
+- val_pass@1: baseline 5.86% @ step 0 | peak 20.31% @ step 120 | last 1.17% @ step 250
+- val_reward_mean: baseline -0.119 @ step 0 | peak 1.465 @ step 120 | last -0.391 @ step 250
+- train_success: baseline 4.69% @ step 1 | peak 45.31% @ step 195 | last 0.00% @ step 257
+- train_pass@16: baseline 50.00% @ step 1 | peak 87.50% @ step 69 | last 0.00% @ step 257
+- MI_traj: baseline 0.686 @ step 1 | peak 1.351 @ step 40 | last -0 @ step 255
+- Hcond_traj: baseline 2.823 @ step 1 | peak 3.596 @ step 35 | last 0.017 @ step 255
+- MI_firstturn: baseline 0.04 @ step 1 | peak 0.116 @ step 200 | last -0 @ step 255
+- valid_think_rate: baseline 85.35% @ step 1 | peak 100.00% @ step 90 | last 20.31% @ step 255
+- actor_entropy: baseline 2.238 @ step 1 | peak 2.907 @ step 24 | last 0.429 @ step 256
+- pg_loss: baseline -0.093 @ step 1 | peak 1.576 @ step 206 | last -0.003 @ step 256
+- actor_grad_norm: baseline 4.933 @ step 1 | peak 1845.545 @ step 204 | last 29.345 @ step 256
+- critic_vf_loss: baseline 0.337 @ step 1 | peak 0.64 @ step 195 | last 0 @ step 256
+- reward_mean: baseline -0.066 @ step 1 | peak 4.398 @ step 195 | last -0.505 @ step 256
+- step_time_s: baseline 317.102 @ step 1 | peak 498.831 @ step 30 | last 129.875 @ step 256
