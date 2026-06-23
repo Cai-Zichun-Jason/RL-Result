@@ -1,23 +1,3 @@
-# Qwen2.5-1.5B-sokoban-PPO-filteron — final metrics
-
-## Run Status
-- max_step_with_metrics: 284
-- wall_time: 39421s
-- early_stop: reward_variance_collapse
-
-## Peak / Baseline / Last
-- val_success: baseline 5.86% @ step 0 | peak 26.56% @ step 210 | last 25.20% @ step 280
-- val_pass@1: baseline 5.86% @ step 0 | peak 26.56% @ step 210 | last 25.20% @ step 280
-- val_reward_mean: baseline -0.119 @ step 0 | peak 2.046 @ step 210 | last 1.901 @ step 280
-- train_success: baseline 4.69% @ step 1 | peak 75.00% @ step 279 | last 37.50% @ step 284
-- train_pass@16: baseline 50.00% @ step 1 | peak 100.00% @ step 117 | last 37.50% @ step 284
-- MI_traj: baseline 0.686 @ step 1 | peak 1.519 @ step 115 | last 0.066 @ step 280
-- Hcond_traj: baseline 2.823 @ step 1 | peak 3.622 @ step 140 | last 0.007 @ step 280
-- MI_firstturn: baseline 0.04 @ step 1 | peak 0.059 @ step 50 | last -0 @ step 280
-- valid_think_rate: baseline 85.35% @ step 1 | peak 100.00% @ step 105 | last 100.00% @ step 280
-- actor_entropy: baseline 2.246 @ step 1 | peak 3.478 @ step 43 | last 0.805 @ step 283
-- pg_loss: baseline -0.201 @ step 1 | peak 0.824 @ step 27 | last 0.001 @ step 283
-- actor_grad_norm: baseline 5.938 @ step 1 | peak 58.482 @ step 113 | last 4.523 @ step 283
-- critic_vf_loss: baseline 0.279 @ step 1 | peak 1.36 @ step 227 | last 0.198 @ step 283
-- reward_mean: baseline 0.486 @ step 1 | peak 10.295 @ step 232 | last 0.375 @ step 283
-- step_time_s: baseline 265.733 @ step 1 | peak 483.389 @ step 280 | last 128.977 @ step 283
+[36m(TaskRunner pid=98888)[0m  "'val-core/unknown/reward/mean@512': np.float64(1.6607421949738637), "
+[36m(TaskRunner pid=98888)[0m  "'val-core/unknown/reward/best@512/mean': np.float64(10.899999618530273), "
+[36m(TaskRunner pid=98888)[0m  "'val-core/unknown/reward/best@512/std': np.float64(0.0), "
